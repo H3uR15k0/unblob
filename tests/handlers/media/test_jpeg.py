@@ -65,6 +65,28 @@ def test_finds_embedded_jpeg(jpeg: bytes):
     assert chunks == [(len(prefix), len(prefix) + len(jpeg))]
 
 
+@pytest.mark.parametrize("fill_count", [1, 3])
+def test_finds_jpeg_with_fill_before_first_segment(fill_count: int):
+    jpeg = SOI + b"\xff" * fill_count + make_jpeg()[len(SOI) :]
+    prefix = b"firmware"
+
+    assert find_chunks(JPEGHandler, prefix + jpeg + b"trailing") == [
+        (len(prefix), len(prefix) + len(jpeg))
+    ]
+
+
+@pytest.mark.parametrize("restart", range(0xD0, 0xD8))
+@pytest.mark.parametrize("fill_count", [1, 3])
+def test_finds_jpeg_with_padded_restart_marker(restart: int, fill_count: int):
+    scan = SCAN_DATA.replace(b"\xff\xd0", b"\xff" * (fill_count + 1) + bytes([restart]))
+    jpeg = make_jpeg(APP0, DQT, SOF0, DHT, SOS + scan)
+    prefix = b"firmware"
+
+    assert find_chunks(JPEGHandler, prefix + jpeg + b"trailing") == [
+        (len(prefix), len(prefix) + len(jpeg))
+    ]
+
+
 @pytest.mark.parametrize(
     "jpeg, error",
     [

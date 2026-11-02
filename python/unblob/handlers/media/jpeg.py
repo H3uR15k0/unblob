@@ -36,15 +36,15 @@ SOF_MARKERS = {*range(0xC0, 0xD0)} - {0xC4, 0xC8, 0xCC}
 FIRST_VALID_MARKER = 0xC0
 
 # entropy-coded data ends at the first 0xFF that is neither byte stuffing
-# (0xFF 0x00) nor a restart marker (0xFF 0xD0-0xD7)
-ENTROPY_CODED_DATA_END = re.compile(rb"\xff[^\x00\xd0-\xd7]")
+# (0xFF 0x00), a restart marker (0xFF 0xD0-0xD7), or a fill byte (0xFF 0xFF)
+ENTROPY_CODED_DATA_END = re.compile(rb"\xff[^\x00\xd0-\xd7\xff]")
 
 
 class JPEGHandler(Handler):
     NAME = "jpeg"
 
     # SOI followed by the first real marker (APPn, DQT, DHT, SOFn, COM, ...)
-    PATTERNS = [Regex(r"\xff\xd8\xff[\xc0-\xfe]")]
+    PATTERNS = [Regex(r"\xff\xd8\xff+[\xc0-\xfe]")]
 
     EXTRACTOR = None
 
